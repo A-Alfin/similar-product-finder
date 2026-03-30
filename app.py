@@ -195,6 +195,8 @@ footer { visibility: hidden; }
 # ── download model files ─────────────────────────────
 def download_models():
     MODELS_DIR.mkdir(exist_ok=True)
+
+    # download model files
     for fname in ["resnet50_extractor.pth", "faiss.index", "image_paths.pkl"]:
         dest = MODELS_DIR / fname
         if not dest.exists():
@@ -205,7 +207,46 @@ def download_models():
                     local_dir=str(MODELS_DIR)
                 )
 
+    # download dan extract gambar sampel
+    images_dir = Path("data/images")
+    if not images_dir.exists() or not any(images_dir.iterdir()):
+        import zipfile
+        zip_dest = Path("data/images_sample.zip")
+        zip_dest.parent.mkdir(parents=True, exist_ok=True)
+
+        with st.spinner("Menyiapkan gambar produk (26MB)..."):
+            hf_hub_download(
+                repo_id=HF_REPO_ID,
+                filename="images_sample.zip",
+                local_dir="data"
+            )
+
+        with st.spinner("Mengekstrak gambar..."):
+            with zipfile.ZipFile(zip_dest, "r") as z:
+                z.extractall(images_dir)
+            zip_dest.unlink()  # hapus zip setelah extract
+
+        st.success("Gambar produk siap!")
+
 download_models()
+
+# debug — hapus setelah masalah solved
+import os
+from pathlib import Path
+
+st.write("=== DEBUG INFO ===")
+st.write(f"data/images exists: {Path('data/images').exists()}")
+if Path('data/images').exists():
+    files = list(Path('data/images').glob('*.jpg'))
+    st.write(f"Jumlah jpg di data/images: {len(files)}")
+    if files:
+        st.write(f"Contoh path: {files[0]}")
+else:
+    st.write("Folder data/images tidak ada")
+
+st.write(f"data/images_sample.zip exists: {Path('data/images_sample.zip').exists()}")
+st.write(f"Image paths sample: {image_paths[:3]}")
+st.write("=== END DEBUG ===")
 
 # ── load resources ────────────────────────────────────────────────────────────
 @st.cache_resource
