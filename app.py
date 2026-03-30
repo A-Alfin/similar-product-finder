@@ -231,22 +231,22 @@ def download_models():
 download_models()
 
 # debug — hapus setelah masalah solved
-import os
-from pathlib import Path
+# import os
+# from pathlib import Path
 
-st.write("=== DEBUG INFO ===")
-st.write(f"data/images exists: {Path('data/images').exists()}")
-if Path('data/images').exists():
-    files = list(Path('data/images').glob('*.jpg'))
-    st.write(f"Jumlah jpg di data/images: {len(files)}")
-    if files:
-        st.write(f"Contoh path: {files[0]}")
-else:
-    st.write("Folder data/images tidak ada")
+# st.write("=== DEBUG INFO ===")
+# st.write(f"data/images exists: {Path('data/images').exists()}")
+# if Path('data/images').exists():
+#     files = list(Path('data/images').glob('*.jpg'))
+#     st.write(f"Jumlah jpg di data/images: {len(files)}")
+#     if files:
+#         st.write(f"Contoh path: {files[0]}")
+# else:
+#     st.write("Folder data/images tidak ada")
 
-st.write(f"data/images_sample.zip exists: {Path('data/images_sample.zip').exists()}")
-st.write(f"Image paths sample: {image_paths[:3]}")
-st.write("=== END DEBUG ===")
+# st.write(f"data/images_sample.zip exists: {Path('data/images_sample.zip').exists()}")
+# st.write(f"Image paths sample: {image_paths[:3]}")
+# st.write("=== END DEBUG ===")
 
 # ── load resources ────────────────────────────────────────────────────────────
 @st.cache_resource
@@ -284,22 +284,22 @@ def extract_query_feature(model, img):
 # ── load ──────────────────────────────────────────────────────────────────────
 model, index, image_paths = load_resources()
 
-# debug
-model, index, image_paths = load_resources()
+# # debug
+# model, index, image_paths = load_resources()
 
-st.write("=== DEBUG ===")
-st.write(f"Contoh image_path[0]: {image_paths[0]}")
-st.write(f"Path exists: {Path(image_paths[0]).exists() if image_paths[0] else 'None'}")
+# st.write("=== DEBUG ===")
+# st.write(f"Contoh image_path[0]: {image_paths[0]}")
+# st.write(f"Path exists: {Path(image_paths[0]).exists() if image_paths[0] else 'None'}")
 
-# coba cari file berdasarkan nama file saja
-sample_path = image_paths[0]
-if sample_path:
-    fname = Path(sample_path).name
-    local_path = Path("data/images") / fname
-    st.write(f"Nama file: {fname}")
-    st.write(f"Local path: {local_path}")
-    st.write(f"Local path exists: {local_path.exists()}")
-st.write("=== END ===")
+# # coba cari file berdasarkan nama file saja
+# sample_path = image_paths[0]
+# if sample_path:
+#     fname = Path(sample_path).name
+#     local_path = Path("data/images") / fname
+#     st.write(f"Nama file: {fname}")
+#     st.write(f"Local path: {local_path}")
+#     st.write(f"Local path exists: {local_path.exists()}")
+# st.write("=== END ===")
 
 # ── header ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
