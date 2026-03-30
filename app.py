@@ -284,6 +284,23 @@ def extract_query_feature(model, img):
 # ── load ──────────────────────────────────────────────────────────────────────
 model, index, image_paths = load_resources()
 
+# debug
+model, index, image_paths = load_resources()
+
+st.write("=== DEBUG ===")
+st.write(f"Contoh image_path[0]: {image_paths[0]}")
+st.write(f"Path exists: {Path(image_paths[0]).exists() if image_paths[0] else 'None'}")
+
+# coba cari file berdasarkan nama file saja
+sample_path = image_paths[0]
+if sample_path:
+    fname = Path(sample_path).name
+    local_path = Path("data/images") / fname
+    st.write(f"Nama file: {fname}")
+    st.write(f"Local path: {local_path}")
+    st.write(f"Local path exists: {local_path.exists()}")
+st.write("=== END ===")
+
 # ── header ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="header-wrap">
