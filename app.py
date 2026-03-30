@@ -11,55 +11,217 @@ import torchvision.transforms as transforms
 from huggingface_hub import hf_hub_download
 
 # ── config ───────────────────────────────────────────────────────────────────
-HF_REPO_ID    = "A-Alfin/similar-product-finder-models"
-MODELS_DIR    = Path("models")
-INDEX_PATH    = MODELS_DIR / "faiss.index"
-PATHS_PKL     = MODELS_DIR / "image_paths.pkl"
-MODEL_PATH    = MODELS_DIR / "resnet50_extractor.pth"
-WIFI_DIR      = Path("data/wifi_product")
-TOP_K         = 8
-DEVICE        = "cuda" if torch.cuda.is_available() else "cpu"
+HF_REPO_ID  = "A-Alfin/similar-product-finder-models"
+MODELS_DIR  = Path("models")
+INDEX_PATH  = MODELS_DIR / "faiss.index"
+PATHS_PKL   = MODELS_DIR / "image_paths.pkl"
+MODEL_PATH  = MODELS_DIR / "resnet50_extractor.pth"
+WIFI_DIR    = Path("data/wifi_product")
+TOP_K       = 8
+DEVICE      = "cuda" if torch.cuda.is_available() else "cpu"
 
-# ── download model files ────────────────────
+# ── page config ───────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Similar Product Finder",
+    page_icon="🛍️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ── custom CSS ────────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* header */
+.header-wrap {
+    background: linear-gradient(135deg, #FF6B35 0%, #F7C59F 50%, #EFEFD0 100%);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+}
+.header-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+}
+.header-sub {
+    font-size: 0.9rem;
+    color: #444;
+    margin-top: 0.3rem;
+}
+
+/* stat chips */
+.stat-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+.stat-chip {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: 999px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* upload zone */
+.upload-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+/* product card */
+.product-card {
+    background: white;
+    border-radius: 12px;
+    border: 1.5px solid #f0f0f0;
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+    margin-bottom: 1rem;
+}
+.product-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+.card-body {
+    padding: 10px 12px;
+}
+.card-category {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #FF6B35;
+    margin-bottom: 3px;
+}
+.card-name {
+    font-size: 0.82rem;
+    color: #1a1a1a;
+    font-weight: 500;
+    line-height: 1.3;
+}
+.card-sim {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+.sim-bar-outer {
+    flex: 1;
+    height: 4px;
+    background: #f0f0f0;
+    border-radius: 999px;
+}
+.sim-bar-inner {
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(to right, #FF6B35, #f7c59f);
+}
+.sim-pct {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #FF6B35;
+    min-width: 36px;
+    text-align: right;
+}
+
+/* wifi badge */
+.wifi-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-block;
+    margin-top: 4px;
+}
+
+/* search button */
+.stButton > button {
+    background: #FF6B35 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    padding: 0.65rem 1.5rem !important;
+    width: 100% !important;
+    transition: opacity 0.2s !important;
+}
+.stButton > button:hover { opacity: 0.88 !important; }
+
+/* section title */
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+}
+.result-count {
+    font-size: 0.82rem;
+    color: #888;
+    font-weight: 400;
+    margin-left: 6px;
+}
+
+/* empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #bbb;
+}
+.empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+.empty-text { font-size: 0.95rem; }
+
+footer { visibility: hidden; }
+#MainMenu { visibility: hidden; }
+</style>
+""", unsafe_allow_html=True)
+
+# ── download model files ─────────────────────────────
 def download_models():
     MODELS_DIR.mkdir(exist_ok=True)
-    files = [
-        "resnet50_extractor.pth",
-        "faiss.index",
-        "image_paths.pkl",
-    ]
-    for fname in files:
+    for fname in ["resnet50_extractor.pth", "faiss.index", "image_paths.pkl"]:
         dest = MODELS_DIR / fname
         if not dest.exists():
-            with st.spinner(f"Downloading {fname} dari Hugging Face..."):
-                path = hf_hub_download(
+            with st.spinner(f"Menyiapkan {fname}..."):
+                hf_hub_download(
                     repo_id=HF_REPO_ID,
                     filename=fname,
                     local_dir=str(MODELS_DIR)
                 )
-            st.success(f"{fname} siap")
 
 download_models()
 
 # ── load resources ────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_resources():
-    # load model
     model = models.resnet50(weights=None)
     model = nn.Sequential(*list(model.children())[:-1])
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval().to(DEVICE)
 
-    # load FAISS index
     index = faiss.read_index(str(INDEX_PATH))
 
-    # load image paths
     with open(PATHS_PKL, "rb") as f:
         image_paths = pickle.load(f)
 
     return model, index, image_paths
 
-# ── preprocessing ─────────────────────────────────────────────────────────────
 @st.cache_data
 def get_transform():
     return transforms.Compose([
@@ -71,47 +233,35 @@ def get_transform():
         ),
     ])
 
-def extract_query_feature(model, img: Image.Image) -> np.ndarray:
-    transform = get_transform()
-    tensor    = transform(img.convert("RGB")).unsqueeze(0).to(DEVICE)
-
+def extract_query_feature(model, img):
+    tensor = get_transform()(img.convert("RGB")).unsqueeze(0).to(DEVICE)
     with torch.no_grad():
-        feat = model(tensor)
-        feat = feat.squeeze(-1).squeeze(-1)
-        feat = feat.cpu().numpy()
-
+        feat = model(tensor).squeeze(-1).squeeze(-1).cpu().numpy()
     feat = feat / (np.linalg.norm(feat) + 1e-8)
     return feat.astype("float32")
-
-# ── page config ───────────────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Similar Product Finder",
-    page_icon="🔍",
-    layout="wide"
-)
-
-st.title("🔍 Similar Product Finder")
-st.caption("ResNet50 + FAISS · Portfolio Project · Alfin 2026")
-st.divider()
 
 # ── load ──────────────────────────────────────────────────────────────────────
 model, index, image_paths = load_resources()
 
-# ── sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### Info")
-    st.metric("Produk dalam database", index.ntotal)
-    st.metric("Feature dimension", "2048-dim")
-    st.metric("Model", "ResNet50")
-    st.metric("Search engine", "FAISS IndexFlatIP")
-    st.divider()
-    top_k = st.slider("Jumlah hasil", min_value=4, max_value=12, value=TOP_K, step=4)
+# ── header ────────────────────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="header-wrap">
+    <p class="header-title">🛍️ Similar Product Finder</p>
+    <p class="header-sub">Upload foto produk — temukan produk paling mirip dari database secara instan</p>
+    <div class="stat-row">
+        <span class="stat-chip">ResNet50</span>
+        <span class="stat-chip">FAISS IndexFlatIP</span>
+        <span class="stat-chip">2048-dim embedding</span>
+        <span class="stat-chip">{index.ntotal:,} produk</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# ── main ──────────────────────────────────────────────────────────────────────
-col_upload, col_results = st.columns([1, 2.5])
+# ── layout ────────────────────────────────────────────────────────────────────
+col_left, col_right = st.columns([1, 2.8], gap="large")
 
-with col_upload:
-    st.markdown("#### Upload gambar produk")
+with col_left:
+    st.markdown('<p class="upload-label">Upload gambar produk</p>', unsafe_allow_html=True)
     uploaded = st.file_uploader(
         "jpg / png / webp",
         type=["jpg", "jpeg", "png", "webp"],
@@ -120,51 +270,90 @@ with col_upload:
 
     if uploaded:
         query_img = Image.open(uploaded).convert("RGB")
-        st.image(query_img, caption="Query image", use_container_width=True)
+        st.image(query_img, use_container_width=True,
+                 caption="Query image")
 
-        if st.button("Cari produk mirip", use_container_width=True, type="primary"):
-            with st.spinner("Mencari..."):
-                query_feat          = extract_query_feature(model, query_img)
-                scores, indices_res = index.search(query_feat, top_k + 1)
+        top_k = st.slider("Jumlah hasil", 4, 12, TOP_K, step=4)
 
-            results = [
-                (int(idx), float(score))
-                for idx, score in zip(indices_res[0], scores[0])
+        if st.button("🔍 Cari Produk Mirip"):
+            with st.spinner("Sedang mencari..."):
+                feat               = extract_query_feature(model, query_img)
+                scores, idx_result = index.search(feat, top_k + 1)
+
+            st.session_state["results"] = [
+                (int(i), float(s))
+                for i, s in zip(idx_result[0], scores[0])
             ][:top_k]
 
-            st.session_state["results"] = results
-
-with col_results:
+with col_right:
     if "results" in st.session_state:
-        st.markdown("#### Produk serupa ditemukan")
+        results = st.session_state["results"]
+
+        st.markdown(
+            f'<p class="section-title">Produk Serupa <span class="result-count">{len(results)} hasil</span></p>',
+            unsafe_allow_html=True
+        )
 
         cols = st.columns(4)
-        for i, (idx, score) in enumerate(st.session_state["results"]):
+        for i, (idx, score) in enumerate(results):
             path    = image_paths[idx]
             is_wifi = isinstance(path, str) and path.startswith("WIFI_PRODUCT::")
             col     = cols[i % 4]
+            sim_pct = round(score * 100, 1)
 
             with col:
+                # tampilkan gambar
                 if is_wifi:
                     fname   = path.split("::")[1].split("_aug")[0]
                     matches = list(WIFI_DIR.glob(f"{fname}.*"))
                     if matches:
-                        st.image(Image.open(matches[0]).convert("RGB"),
-                                 use_container_width=True)
-                    else:
-                        st.info("WiFi product")
-                    st.success("WIFI PERUSAHAAN")
-                    st.caption(f"sim: {score:.3f}")
-                else:
-                    if path and Path(path).exists():
-                        st.image(Image.open(path).convert("RGB"),
-                                 use_container_width=True)
+                        img = Image.open(matches[0]).convert("RGB")
+                        st.image(img, use_container_width=True)
                     else:
                         st.image(
-                            Image.new("RGB", (224, 224), color=(240, 240, 240)),
+                            Image.new("RGB", (300, 300), "#e8f5e9"),
                             use_container_width=True
                         )
-                        st.caption("Gambar belum tersedia")
-                    st.caption(f"sim: {score:.3f}")
+                elif path and Path(path).exists():
+                    st.image(Image.open(path).convert("RGB"),
+                             use_container_width=True)
+                else:
+                    # placeholder dengan warna sesuai similarity
+                    placeholder = Image.new("RGB", (300, 300), "#fafafa")
+                    st.image(placeholder, use_container_width=True)
+
+                # card info
+                if is_wifi:
+                    st.markdown(f"""
+                    <div class="card-body">
+                        <div class="card-category">Rekomendasi</div>
+                        <div class="card-name">Produk WiFi Perusahaan</div>
+                        <span class="wifi-badge">✓ Produk Kami</span>
+                        <div class="card-sim">
+                            <div class="sim-bar-outer">
+                                <div class="sim-bar-inner" style="width:{min(sim_pct,100)}%"></div>
+                            </div>
+                            <span class="sim-pct">{sim_pct}%</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div class="card-body">
+                        <div class="card-category">Similar Product</div>
+                        <div class="card-name">Produk #{idx}</div>
+                        <div class="card-sim">
+                            <div class="sim-bar-outer">
+                                <div class="sim-bar-inner" style="width:{min(sim_pct,100)}%"></div>
+                            </div>
+                            <span class="sim-pct">{sim_pct}%</span>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
     else:
-        st.info("Upload gambar dan klik 'Cari produk mirip' untuk mulai.")
+        st.markdown("""
+        <div class="empty-state">
+            <div class="empty-icon">🛍️</div>
+            <div class="empty-text">Upload gambar produk untuk mulai mencari</div>
+        </div>
+        """, unsafe_allow_html=True)
